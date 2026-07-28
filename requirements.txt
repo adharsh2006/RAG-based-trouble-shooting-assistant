@@ -1,0 +1,15 @@
+langchain
+langchain-google-genai
+langchain-community
+langchain-core
+sentence-transformers
+faiss-cpu
+rank-bm25
+streamlit
+python-dotenv
+pandas
+pypdf
+beautifulsoup4
+requests
+lxml
+langchain-huggingface
