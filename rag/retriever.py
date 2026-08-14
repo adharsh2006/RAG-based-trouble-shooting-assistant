@@ -1,10 +1,20 @@
 import os
+import warnings
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Suppress verbose third-party logs & deprecation warnings
+warnings.filterwarnings("ignore")
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
+
 from langchain_community.vectorstores import FAISS
 from langchain_community.retrievers import BM25Retriever
-from langchain_classic.retrievers import EnsembleRetriever
+try:
+    from langchain.retrievers import EnsembleRetriever
+except ImportError:
+    from langchain_classic.retrievers import EnsembleRetriever
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from sentence_transformers import CrossEncoder
@@ -34,13 +44,13 @@ def load_vectorstore():
         embeddings,
         allow_dangerous_deserialization=True,
     )
-    print(f"  ✓ FAISS index loaded ({vectorstore.index.ntotal} vectors)")
+    print(f"  [+] FAISS index loaded ({vectorstore.index.ntotal} vectors)")
     return vectorstore
 
 # ── reranker (cross-encoder runs locally) ──────────────────────────────
 class Reranker:
     def __init__(self):
-        print("  ✓ Loading cross-encoder reranker...")
+        print("  [+] Loading cross-encoder reranker...")
         self.model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
     def rerank(self, query: str, docs: list[Document], top_k: int = 3) -> list[Document]:
@@ -54,11 +64,11 @@ class Reranker:
 # ── hybrid retriever (BM25 + FAISS combined) ───────────────────────────
 class HybridRetriever:
     def __init__(self, vectorstore, all_docs: list[Document]):
-        print("  ✓ Building BM25 retriever...")
+        print("  [+] Building BM25 retriever...")
         bm25_retriever = BM25Retriever.from_documents(all_docs)
         bm25_retriever.k = 10
 
-        print("  ✓ Building FAISS retriever...")
+        print("  [+] Building FAISS retriever...")
         faiss_retriever = vectorstore.as_retriever(
             search_type="similarity",
             search_kwargs={"k": 10},
@@ -69,7 +79,7 @@ class HybridRetriever:
             retrievers=[bm25_retriever, faiss_retriever],
             weights=[0.5, 0.5],
         )
-        print("  ✓ Hybrid retriever ready")
+        print("  [+] Hybrid retriever ready")
 
     def retrieve(self, query: str) -> list[Document]:
         return self.retriever.invoke(query)
