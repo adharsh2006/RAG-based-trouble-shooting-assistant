@@ -13,3 +13,5 @@ beautifulsoup4
 requests
 lxml
 langchain-huggingface
+fastapi
+uvicorn

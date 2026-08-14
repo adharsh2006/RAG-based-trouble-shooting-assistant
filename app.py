@@ -386,3 +386,8 @@ if send and question_input.strip():
     st.rerun()
 elif send and not question_input.strip():
     st.warning("Type something first.")
+
+if __name__ == "__main__":
+    import uvicorn
+    print("\n🚀 Starting HPC Assistant Gemini Web Server on http://127.0.0.1:8000 ...\n")
+    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)

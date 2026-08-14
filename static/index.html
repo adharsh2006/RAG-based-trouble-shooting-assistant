@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC Assistant — Gemini RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Marked.js for markdown parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Backdrop for mobile drawer -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Sliding Sidebar Drawer -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <span class="brand-icon">🖥️</span>
+          <span class="brand-name">HPC Assistant</span>
+        </div>
+        <button class="icon-btn toggle-sidebar-btn" id="collapse-sidebar-btn" title="Collapse sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+        </button>
+      </div>
+
+      <button class="new-chat-btn" id="new-chat-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>New chat</span>
+      </button>
+
+      <div class="history-section">
+        <div class="history-label">Recent Chats</div>
+        <div class="history-list" id="history-list">
+          <!-- Session items loaded dynamically -->
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="kb-widget">
+          <div class="kb-title">⚡ Knowledge Base</div>
+          <div class="kb-stats">4,010 indexed chunks</div>
+          <div class="kb-pills">
+            <span class="kb-pill">5 PDFs</span>
+            <span class="kb-pill">12 Web</span>
+            <span class="kb-pill">30 Incidents</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation Bar -->
+      <header class="top-nav">
+        <div class="left-nav">
+          <button class="icon-btn expand-sidebar-btn hidden" id="expand-sidebar-btn" title="Open sidebar">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+            </svg>
+          </button>
+          <span class="model-badge">Gemini 2.5 Flash · RAG</span>
+        </div>
+        <div class="right-nav">
+          <button class="icon-btn" id="clear-current-chat-btn" title="Delete current chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Center / Active View -->
+      <div class="chat-viewport">
+        <!-- Center Prompt State (Empty Chat) -->
+        <div class="empty-state" id="empty-state">
+          <div class="hero-container">
+            <div class="hero-sparkle">✨</div>
+            <h1 class="hero-title">Hello, HPC Engineer</h1>
+            <p class="hero-subtitle">How can I assist with SLURM, MPI, or Linux troubleshooting today?</p>
+          </div>
+
+          <div class="center-prompt-box">
+            <textarea id="center-prompt-input" placeholder="Ask anything about HPC clusters, job errors, or memory limits..." rows="1"></textarea>
+            <div class="prompt-box-footer">
+              <div class="prompt-chips">
+                <span class="chip">SLURM</span>
+                <span class="chip">MPI</span>
+                <span class="chip">Linux Admin</span>
+              </div>
+              <button class="send-btn" id="center-send-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Suggested Prompt Cards -->
+          <div class="suggestion-grid">
+            <div class="suggestion-card" data-prompt="Why is my SLURM job stuck in PD state?">
+              <div class="card-icon">⚙️</div>
+              <div class="card-text">Why is my SLURM job stuck in PD state?</div>
+            </div>
+            <div class="suggestion-card" data-prompt="MPI job hangs after launch, what should I check?">
+              <div class="card-icon">🔗</div>
+              <div class="card-text">MPI job hangs after launch, what should I check?</div>
+            </div>
+            <div class="suggestion-card" data-prompt="How to resolve Permission denied on /scratch?">
+              <div class="card-icon">🐧</div>
+              <div class="card-text">Permission denied on /scratch filesystem</div>
+            </div>
+            <div class="suggestion-card" data-prompt="How to diagnose OOM kill in SLURM job?">
+              <div class="card-icon">💥</div>
+              <div class="card-text">Diagnose OOM kill in SLURM job</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Chat Message Stream View -->
+        <div class="active-chat hidden" id="active-chat">
+          <div class="messages-container" id="messages-container">
+            <!-- Messages rendered dynamically -->
+          </div>
+          <div class="chat-bottom-spacer"></div>
+        </div>
+      </div>
+
+      <!-- Floating Bottom Center Prompt Bar (for active chat) -->
+      <div class="bottom-bar-container hidden" id="bottom-bar-container">
+        <div class="bottom-prompt-box">
+          <textarea id="bottom-prompt-input" placeholder="Message HPC Assistant..." rows="1"></textarea>
+          <button class="send-btn" id="bottom-send-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
